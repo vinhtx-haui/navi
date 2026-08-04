@@ -1,0 +1,50 @@
+# Môi trường phát triển local cho Navi.
+#
+# Thông tin đăng nhập dưới đây CHỈ dùng cho local development. Chúng nằm trong repo có chủ ý:
+# service chỉ bind vào 127.0.0.1 nên chúng không bảo vệ gì cả.
+# KHÔNG dùng lại các giá trị này ở bất kỳ môi trường nào khác.
+
+name: navi-dev
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: navi-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: navi
+      POSTGRES_USER: navi
+      POSTGRES_PASSWORD: navi_local_dev
+      # Bật checksum để phát hiện hỏng dữ liệu sớm ngay ở môi trường dev
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - navi-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U navi -d navi"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Redis chưa cần thiết ở đầu Phase 1. Bật bằng:
+  #   docker compose -f infra/docker/docker-compose.dev.yml --profile cache up -d
+  # Xem nguyên tắc "chọn độ phức tạp muộn nhất có thể" — docs/architecture.md §1
+  redis:
+    image: redis:7-alpine
+    container_name: navi-redis-dev
+    restart: unless-stopped
+    profiles: ["cache"]
+    command: ["redis-server", "--appendonly", "no", "--save", ""]
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  navi-pgdata:
+    name: navi-pgdata-dev

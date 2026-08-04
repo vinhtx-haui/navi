@@ -1,0 +1,105 @@
+# ─── OS ───────────────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+desktop.ini
+
+# ─── IDE / Editor ─────────────────────────────────────────────────────────────
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/*
+!.vscode/settings.json.example
+!.vscode/extensions.json
+.fleet/
+*.swp
+*.swo
+*~
+
+# ─── Secrets & local config ───────────────────────────────────────────────────
+# Never commit real credentials. Commit *.example files instead.
+.env
+.env.*
+!.env.example
+*.local
+application-local.yml
+application-local.yaml
+application-local.properties
+application-secret*.yml
+*.pem
+*.key
+*.p12
+*.jks
+!**/test*.jks
+secrets/
+
+# ─── Java / Maven / Gradle ────────────────────────────────────────────────────
+target/
+build/
+out/
+!gradle/wrapper/gradle-wrapper.jar
+.gradle/
+*.class
+*.jar
+*.war
+*.ear
+!**/mvnw
+!**/mvnw.cmd
+!.mvn/wrapper/maven-wrapper.jar
+hs_err_pid*
+replay_pid*
+
+# ─── Node / Next.js ───────────────────────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+.next/
+.turbo/
+.swc/
+dist/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+.vercel
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ─── Python (tooling / future ML services) ────────────────────────────────────
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# ─── Database / data ──────────────────────────────────────────────────────────
+*.sqlite
+*.sqlite3
+*.db
+pgdata/
+data/
+dump.rdb
+*.sql.gz
+*.dump
+# Real student data must never enter the repository — see docs/architecture.md
+database/seeds/real/
+
+# ─── Logs & temp ──────────────────────────────────────────────────────────────
+logs/
+*.log
+tmp/
+temp/
+.cache/
+
+# ─── Build & test artefacts ───────────────────────────────────────────────────
+.scannerwork/
+allure-results/
+test-results/
+playwright-report/

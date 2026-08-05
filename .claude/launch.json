@@ -1,0 +1,21 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "navi-api",
+      "runtimeExecutable": "/opt/homebrew/opt/openjdk@21/bin/java",
+      "runtimeArgs": [
+        "-jar",
+        "backend/target/navi-backend-0.1.0-SNAPSHOT.jar",
+        "--spring.profiles.active=dev"
+      ],
+      "port": 8080
+    },
+    {
+      "name": "navi-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "frontend", "run", "dev"],
+      "port": 3000
+    }
+  ]
+}

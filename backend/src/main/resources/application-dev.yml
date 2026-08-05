@@ -1,0 +1,31 @@
+# Local development profile. Run with:
+#   ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+#
+# Nothing secret belongs in this file. Anything environment-specific and sensitive goes in
+# application-local.yml, which .gitignore excludes.
+
+spring:
+  jpa:
+    show-sql: true
+
+  # Restart on classpath changes; only ever enabled in development.
+  devtools:
+    restart:
+      enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env,configprops
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.navi: DEBUG
+    # Uncomment when investigating a suspected N+1 query:
+    # org.hibernate.SQL: DEBUG
+    # org.hibernate.orm.jdbc.bind: TRACE
+    org.flywaydb: INFO

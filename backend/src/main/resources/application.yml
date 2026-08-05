@@ -1,0 +1,79 @@
+spring:
+  application:
+    name: navi-backend
+
+  datasource:
+    # Local development defaults match infra/docker/docker-compose.dev.yml.
+    # Every environment beyond local supplies these through environment variables.
+    url: ${NAVI_DB_URL:jdbc:postgresql://localhost:5432/navi}
+    username: ${NAVI_DB_USER:navi}
+    password: ${NAVI_DB_PASSWORD:navi_local_dev}
+    hikari:
+      pool-name: navi-pool
+      maximum-pool-size: 10
+      connection-timeout: 3000
+
+  jpa:
+    # The schema is owned by Flyway migrations (ADR-0003). Hibernate only checks that the mapping
+    # matches what the migrations produced; it never alters anything.
+    hibernate:
+      ddl-auto: validate
+    # Lazy loading outside a transaction hides N+1 queries behind rendering. Keep it off.
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc.time_zone: UTC
+        format_sql: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    # Fail loudly rather than guessing when a checksum does not match a previously applied script.
+    validate-on-migrate: true
+    # No environment may ever be baselined implicitly — migrations must run from V1.
+    baseline-on-migrate: false
+
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+
+  threads:
+    virtual:
+      # Java 21 virtual threads: request handling scales without tuning a platform-thread pool.
+      enabled: true
+
+server:
+  port: ${NAVI_PORT:8080}
+  error:
+    # Error bodies come from ApiExceptionHandler; never leak stack traces to clients.
+    include-stacktrace: never
+    include-message: never
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # Only what is needed to run the service. Everything else stays closed.
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: Navi Platform
+    phase: "1 — Foundation"
+
+logging:
+  pattern:
+    # requestId is set per request by RequestIdFilter, so log lines can be correlated.
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{requestId:-no-request}] %logger{36} - %msg%n"
+  level:
+    com.navi: INFO

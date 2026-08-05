@@ -1,104 +1,140 @@
 # Navi Backend
 
-Spring Boot modular monolith. Đây là trung tâm của hệ thống — xem
-[docs/architecture.md](../docs/architecture.md) trước khi viết code.
+Spring Boot modular monolith — the centre of gravity of the project. Read
+[docs/architecture.md](../docs/architecture.md) before adding code.
 
-**Trạng thái:** chưa khởi tạo. Thư mục này hiện chỉ có tài liệu.
+**Status:** skeleton runs. Shared kernel, module packages, baseline migration and architecture tests
+are in place. No product feature is implemented yet.
 
 ---
 
-## Trước khi khởi tạo — checklist môi trường
+## Môi trường
 
-Môi trường dev đã kiểm tra ngày 2026-08-04:
-
-| Yêu cầu | Trạng thái trên máy |
+| Yêu cầu | Trạng thái (2026-08-05) |
 | --- | --- |
-| JDK 21 (LTS) | ⚠️ **Đang có JDK 17.0.17** — cần cài JDK 21, hoặc hạ mục tiêu xuống Java 17 và cập nhật [ADR-0002](../docs/adr/0002-backend-tech-stack.md) |
-| Maven 3.9+ | ✅ 3.9.11 |
-| Docker | ✅ 28.5.1 |
+| JDK 21 | ✅ OpenJDK 21.0.12 tại `/opt/homebrew/opt/openjdk@21` |
+| Maven | ✅ Wrapper `./mvnw` (3.9.11) — không cần Maven cài sẵn |
+| Docker | ✅ 28.5.1 — cần cho PostgreSQL và Testcontainers |
 
-Spring Boot 3.x chạy được trên Java 17, nên cả hai hướng đều hợp lệ. Cần **quyết định và ghi lại**
-trước khi tạo `pom.xml`, vì đổi phiên bản Java sau khi có code là việc gây ma sát không cần thiết.
+Homebrew's `openjdk@21` là **keg-only**: nó không nằm trên `PATH` và `/usr/libexec/java_home`
+không thấy nó. Vì vậy `export JAVA_HOME=...` **không** đủ cho lệnh `java` trực tiếp — `java` vẫn
+là JDK 17 trên `PATH`. Hai cách dùng:
 
-## Cấu trúc dự kiến
+```bash
+export JAVA_HOME=/opt/homebrew/opt/openjdk@21
+```
+
+Dòng trên đủ cho `./mvnw` (wrapper đọc `JAVA_HOME`). Khi chạy jar trực tiếp thì gọi thẳng binary:
+
+```bash
+/opt/homebrew/opt/openjdk@21/bin/java -jar target/navi-backend-0.1.0-SNAPSHOT.jar
+```
+
+Thêm `export JAVA_HOME=/opt/homebrew/opt/openjdk@21` vào `~/.zshrc` để không phải lặp lại.
+
+## Chạy
+
+Cần PostgreSQL trước:
+
+```bash
+docker compose -f ../infra/docker/docker-compose.dev.yml up -d
+```
+
+```bash
+JAVA_HOME=/opt/homebrew/opt/openjdk@21 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+```
+
+Kiểm tra:
+
+```bash
+curl -s localhost:8080/actuator/health && curl -s localhost:8080/api/v1/meta
+```
+
+## Test
+
+```bash
+JAVA_HOME=/opt/homebrew/opt/openjdk@21 ./mvnw verify
+```
+
+41 test, chia làm ba loại:
+
+| Loại | Ví dụ | Cần gì |
+| --- | --- | --- |
+| Domain unit test | `CreditTest`, `GradeTest`, `ProvenanceTest`, `AnswerTest` | Không cần gì — chạy trong vài ms |
+| Web layer test | `MetaControllerTest`, `ApiExceptionHandlerTest` | Spring context tối thiểu, không có database |
+| Integration test | `BaselineMigrationTest` | **Docker** — Testcontainers dựng PostgreSQL 16 thật |
+| Architecture test | `ModuleBoundaryTest` | Không cần gì |
+
+## Cấu trúc hiện tại
 
 ```
 backend/
 ├── pom.xml
-├── src/
-│   ├── main/
-│   │   ├── java/com/navi/
-│   │   │   ├── NaviApplication.java
-│   │   │   ├── shared/              # shared kernel — giữ càng nhỏ càng tốt
-│   │   │   │   ├── domain/          # Credit, Grade, Provenance, VerificationStatus
-│   │   │   │   ├── error/           # mô hình lỗi chung
-│   │   │   │   └── event/           # domain event bus
-│   │   │   ├── identity/            # module: user, auth
-│   │   │   ├── academic/            # module: curriculum, course, enrollment
-│   │   │   ├── progress/            # module: tính toán tiến độ
-│   │   │   ├── goal/                # module: mục tiêu
-│   │   │   ├── skill/               # module: kỹ năng, roadmap
-│   │   │   └── knowledge/           # module: source, verification
-│   │   └── resources/
-│   │       ├── application.yml
-│   │       └── application-dev.yml
-│   └── test/
-│       └── java/com/navi/
-│           ├── architecture/        # ArchUnit — canh biên giới module
-│           └── ...                  # unit test theo module + integration test
-└── README.md
+├── src/main/java/com/navi/
+│   ├── NaviApplication.java
+│   ├── shared/                     # shared kernel — giữ càng nhỏ càng tốt
+│   │   ├── domain/                 # Provenance, VerificationStatus, Credit, Grade, GpaScale,
+│   │   │                           # Answer<T>, Ids
+│   │   ├── error/                  # DomainException, ResourceNotFound, BusinessRuleViolation,
+│   │   │                           # ApiExceptionHandler
+│   │   ├── event/                  # DomainEvent
+│   │   └── api/                    # MetaController, RequestIdFilter
+│   ├── identity/                   # ─┐
+│   ├── academic/                   #  │ package-info.java mô tả bounded context,
+│   ├── progress/                   #  │ dữ liệu sở hữu, và quy tắc biên giới.
+│   ├── goal/                       #  │ Chưa có code nghiệp vụ.
+│   ├── skill/                      #  │
+│   └── knowledge/                  # ─┘
+├── src/main/resources/
+│   ├── application.yml
+│   ├── application-dev.yml
+│   └── db/migration/V1__baseline.sql
+└── src/test/java/com/navi/
+    ├── architecture/ModuleBoundaryTest.java
+    ├── BaselineMigrationTest.java
+    └── shared/...
 ```
-
-Mỗi module theo bốn lớp `api / application / domain / infrastructure` — chi tiết và **quy tắc phụ
-thuộc** trong [docs/architecture.md](../docs/architecture.md) §2.3.
 
 ## Quy tắc bắt buộc
 
-Ba quy tắc dưới đây được kiểm bằng ArchUnit test trong CI, không phải bằng quy ước:
+Ba quy tắc đầu được `ModuleBoundaryTest` kiểm trong mỗi lần build — vi phạm làm build đỏ kèm thông
+báo chỉ rõ ADR liên quan:
 
-1. **`domain` không import Spring, không import JPA.** Domain logic là Java thuần, test được
-   không cần context và không cần database.
-2. **Module chỉ gọi module khác qua `XModuleApi`.** Không import trực tiếp package `domain` của
-   module khác, không truy vấn bảng thuộc module khác.
+1. **`domain` không import Spring, JPA, Hibernate, servlet API.** Domain logic là Java thuần.
+2. **Module chỉ gọi module khác qua `XModuleApi`** — không import `domain` của module khác, không
+   truy vấn bảng thuộc module khác.
 3. **Không có phụ thuộc vòng giữa các module.**
+4. **`@Transactional` chỉ ở tầng `application`** — không ở controller, không ở domain.
+5. **Constructor injection**, không `@Autowired` trên field.
 
 Ngoài ra:
 
-- **Biên transaction đặt ở tầng `application`** — không ở controller, không ở domain.
-- **Không dùng `spring.jpa.hibernate.ddl-auto: update`** ở bất kỳ profile nào. Schema do Flyway
-  định nghĩa. Ở test dùng `validate`.
-- **Không commit secret.** `application-local.yml` và `.env` đã bị `.gitignore` loại trừ; commit
-  file `.example` thay thế.
-- **Kiểm quyền ở tầng service**, không chỉ ở controller. Mọi truy vấn dữ liệu người dùng phải
-  ràng buộc theo `userId` của người đang đăng nhập.
+- **Không dùng `ddl-auto: update`** ở bất kỳ profile nào. Schema do Flyway định nghĩa; JPA chỉ
+  `validate`.
+- **Mọi bảng tri thức phải có `source_id` + `verification_status`**, và `verification_status`
+  **không có DEFAULT**. Xem comment cuối `V1__baseline.sql`.
+- **Không commit secret.** `application-local.yml` và `.env` đã bị `.gitignore` loại trừ.
+- **Kiểm quyền ở tầng service**, không chỉ ở controller. Mọi truy vấn dữ liệu người dùng ràng buộc
+  theo `userId` đang đăng nhập.
 
-## Thứ tự khởi tạo đề xuất
+## Migration
 
-Thứ tự này được sắp để mỗi bước tạo ra một thứ chạy được và kiểm chứng được, thay vì dựng toàn bộ
-khung rồi mới thử:
+Migration nằm ở `src/main/resources/db/migration/` (không phải `database/migrations/` như bản
+tài liệu đầu tiên dự kiến). Lý do: Flyway chạy lúc app khởi động và đọc từ classpath, nên đặt trong
+resources làm jar tự chứa được toàn bộ schema. Đặt ngoài `backend/` sẽ buộc bản deploy mang thêm
+file rời — một cách để môi trường lệch nhau.
 
-1. `pom.xml` + `NaviApplication` + health endpoint chạy được → xác nhận nền tảng ổn.
-2. Docker Compose PostgreSQL + kết nối thành công → xác nhận hạ tầng dev ổn.
-3. Flyway baseline migration (`V1__baseline.sql`) → xác nhận quy trình migration ổn.
-4. ArchUnit test cho ba quy tắc trên → **đặt ràng buộc trước khi có code để ràng buộc**.
-5. Module `identity`: register / login / refresh, có integration test.
-6. Module `academic`: course + enrollment CRUD.
-7. Module `progress`: tính GPA và tiến độ tín chỉ — domain logic thuần, unit test kỹ.
-8. Module `goal`, `skill`.
+Quy ước: `V<n>__<mô_tả>.sql`, số tăng dần, **không sửa migration đã chạy** — sai thì viết migration
+mới. Xem [database/README.md](../database/README.md).
 
-Bước 4 đặt trước bước 5 có chủ ý: ràng buộc kiến trúc rẻ khi thiết lập từ đầu, đắt khi phải áp
-lên codebase đã vi phạm.
+## Bước tiếp theo
 
-## Lệnh thường dùng (sau khi khởi tạo)
+Theo thứ tự trong [docs/roadmap.md](../docs/roadmap.md) Phase 1:
 
-```bash
-./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
-```
-
-```bash
-./mvnw test
-```
-
-```bash
-./mvnw verify
-```
+1. **Module `identity`** — register / login / refresh với Spring Security + JWT. Khi thêm
+   `spring-boot-starter-security`, mọi endpoint bị chặn theo mặc định; cần cấu hình cho phép
+   `/actuator/health` và `/api/v1/meta`.
+2. **springdoc-openapi** — sinh OpenAPI spec để frontend generate type thay vì viết tay.
+3. **Module `academic`** — `Course` (định nghĩa môn) tách khỏi `Enrollment` (một người học môn đó).
+4. **Module `progress`** — tính tín chỉ và GPA. Domain logic thuần, unit test kỹ; đây là nơi
+   `Answer<T>` được dùng thật.

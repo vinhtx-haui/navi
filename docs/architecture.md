@@ -322,6 +322,7 @@ lựa chọn thiên về khả năng giải thích. Hiệu quả thực tế c�
 | --- | --- |
 | PostgreSQL là **source of truth** duy nhất | Dữ liệu học tập có quan hệ dày (môn ↔ tiên quyết ↔ curriculum ↔ kỹ năng) — quan hệ là mô hình đúng, không phải document |
 | Mọi thay đổi schema qua **Flyway migration** có version | Có thể tái tạo schema từ đầu; không sửa tay trên database |
+| Migration nằm trong **`backend/src/main/resources/db/migration/`** | Flyway chạy lúc app khởi động và đọc từ classpath. Đặt ngoài `backend/` sẽ khiến jar không tự chứa được migration, và bản deploy phải mang thêm file rời — một cách để môi trường lệch nhau. `database/` giữ ERD và seed data. |
 | **Không dùng `ddl-auto: update`** ở bất kỳ môi trường nào | Schema do migration định nghĩa, không do ORM suy diễn |
 | Khóa chính **UUID v7** | Không lộ thông tin qua id tuần tự; sinh được ở client; vẫn sắp xếp được theo thời gian |
 | Xóa mềm (`deleted_at`) cho dữ liệu người dùng | Sinh viên xóa nhầm dữ liệu học tập của cả một học kỳ là mất mát thật |
@@ -387,7 +388,7 @@ Chi tiết đánh đổi trong [ADR-0002](adr/0002-backend-tech-stack.md) và
 | Auth | **Spring Security + JWT** | Access token ngắn hạn + refresh rotation; bắt buộc hiểu authn/authz thay vì dùng dịch vụ đóng gói. |
 | API contract | **OpenAPI 3** (springdoc) | Hợp đồng rõ giữa backend và frontend; sinh client type-safe cho frontend. |
 | Test | **JUnit 5 · AssertJ · Testcontainers · ArchUnit** | Domain test không cần hạ tầng; integration test trên PostgreSQL thật; ArchUnit canh biên giới module. |
-| Frontend | **Next.js 15 · TypeScript · Tailwind** | Đủ tốt để chứng minh sản phẩm chạy thật; TypeScript dùng chung tư duy kiểu với backend. Giữ mỏng có chủ ý. |
+| Frontend | **Next.js 16 · React 19 · TypeScript · Tailwind 4** | Đủ tốt để chứng minh sản phẩm chạy thật; TypeScript dùng chung tư duy kiểu với backend. Giữ mỏng có chủ ý. |
 | Dev infra | **Docker Compose** | Một lệnh dựng được PostgreSQL + Redis; môi trường dev giống nhau ở mọi máy. |
 | CI | **GitHub Actions** | Chạy build + test trên mỗi PR; miễn phí cho repo công khai. |
 | Deploy (Phase 1) | Container trên **một VPS** | Đủ cho quy mô Phase 1. Kubernetes là độ phức tạp không có người dùng nào cần lúc này. |

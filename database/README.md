@@ -11,11 +11,16 @@ PostgreSQL 16 là **source of truth duy nhất** của Navi. Quyết định và
 
 ```
 database/
-├── migrations/       Flyway migration — SQL có version, chạy tăng dần
 ├── seeds/            Dữ liệu mẫu cho phát triển (CHỈ dữ liệu giả)
 ├── erd/              Sơ đồ quan hệ thực thể
 └── README.md
 ```
+
+> **Migration không nằm ở đây.** Flyway migration sống trong
+> **`backend/src/main/resources/db/migration/`**. Flyway chạy lúc backend khởi động và đọc từ
+> classpath, nên đặt trong resources làm jar tự chứa được toàn bộ schema; đặt ngoài `backend/` sẽ
+> buộc bản deploy mang thêm file rời — một cách để môi trường lệch nhau. Quy ước bên dưới áp dụng
+> cho các file ở đó.
 
 ## Quy ước migration
 

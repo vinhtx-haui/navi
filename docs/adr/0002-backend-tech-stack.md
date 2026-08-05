@@ -32,10 +32,10 @@ Stack đi kèm:
 | Test | JUnit 5 · AssertJ · Testcontainers · ArchUnit |
 | Observability | Spring Boot Actuator + structured logging có correlation id |
 
-> **Lưu ý về môi trường:** máy dev hiện có Java 17. Java 21 là LTS mới hơn và là mục tiêu của dự
-> án; cần cài JDK 21 trước khi khởi tạo backend, hoặc điều chỉnh quyết định này xuống Java 17
-> (Spring Boot 3.x chạy được trên Java 17). Đây là việc cần kiểm tra trước khi viết code — xem
-> [backend/README.md](../../backend/README.md).
+> **Trạng thái môi trường (2026-08-05):** đã cài **OpenJDK 21.0.12** qua Homebrew
+> (`brew install openjdk@21`). Formula này là *keg-only*, nên nó không tự xuất hiện với
+> `/usr/libexec/java_home` và không nằm trên `PATH`; cần trỏ `JAVA_HOME` tới
+> `/opt/homebrew/opt/openjdk@21`. Xem [backend/README.md](../../backend/README.md) §Môi trường.
 
 ## Alternatives considered — Phương án đã cân nhắc
 

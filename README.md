@@ -85,15 +85,15 @@ Detail and success criteria per phase: [docs/roadmap.md](docs/roadmap.md)
 
 | Layer | Choice | Note |
 | --- | --- | --- |
-| Backend | Java 21 · Spring Boot 3 | Modular monolith, module-per-domain |
+| Backend | Java 21 · Spring Boot 3.5.3 | Modular monolith, module-per-domain |
 | API | REST + OpenAPI 3 | Contract-first; GraphQL not planned for Phase 1 |
 | Database | PostgreSQL 16 | Single source of truth, relational core |
-| Migrations | Flyway | Versioned SQL under `database/migrations/` |
-| Cache / jobs | Redis 7 | Added when a real need appears, not by default |
-| Frontend | Next.js 15 · TypeScript · Tailwind | Deliberately thin; backend is the centre of gravity |
-| Auth | Spring Security + JWT | Refresh-token rotation |
+| Migrations | Flyway | Versioned SQL in `backend/src/main/resources/db/migration/` |
+| Cache / jobs | Redis 7 | Behind a Compose profile until a real need appears |
+| Frontend | Next.js 16 · React 19 · TypeScript · Tailwind 4 | Deliberately thin; backend is the centre of gravity |
+| Auth | Spring Security + JWT | Refresh-token rotation — not yet implemented |
 | Infra | Docker Compose (dev) → single VPS/container host (prod) | Kubernetes explicitly out of scope for now |
-| Quality | JUnit 5 · Testcontainers · GitHub Actions | Integration tests run against real PostgreSQL |
+| Quality | JUnit 5 · Testcontainers · ArchUnit | Integration tests run against real PostgreSQL |
 
 ## Project Structure
 
@@ -103,25 +103,50 @@ navi-platform/
 │   └── adr/         Architecture Decision Records
 ├── backend/         Spring Boot modular monolith
 ├── frontend/        Next.js web client
-├── database/        Flyway migrations, seed data, ERD
+├── database/        Seed data, ERD (migrations ship with the backend)
 └── infra/           Docker Compose, deployment, CI notes
 ```
 
+## Getting Started
+
+Requires JDK 21, Node 22+, and Docker.
+
+```bash
+docker compose -f infra/docker/docker-compose.dev.yml up -d
+```
+
+```bash
+cd backend && ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+```
+
+```bash
+cd frontend && npm run dev
+```
+
+The API serves `http://localhost:8080`, the web client `http://localhost:3000`. Flyway applies
+migrations on backend startup. Run the test suite — including integration tests against a real
+PostgreSQL container — with `cd backend && ./mvnw verify`.
+
 ## Development Status
 
-**Phase 0 — Project initialisation.** As of the first commit, this repository contains the
-product and architecture documentation only. No application code has been written yet.
+**Phase 1 — Foundation, in progress.** The skeleton runs end to end: the web client renders live
+data fetched from the API, which reads a Flyway-migrated PostgreSQL database. No product feature
+has been built yet.
 
-Deliberately, documentation comes first: Navi is a long-term project, and decisions made in
-week one about domain boundaries and data ownership are the expensive ones to reverse.
+Documentation came first on purpose: Navi is a long-term project, and decisions made in week one
+about domain boundaries and data ownership are the expensive ones to reverse.
 
 - [x] Vision, product requirements, roadmap
 - [x] Architecture and initial ADRs
-- [ ] Backend skeleton — modules, config, health endpoint
-- [ ] Database schema v1 + Flyway baseline
+- [x] Backend skeleton — shared kernel, module packages, config, meta endpoint
+- [x] Database baseline migration — module schemas + `knowledge.sources`
+- [x] Architecture tests enforcing module boundaries (ArchUnit)
+- [x] Frontend shell — typed API client, live backend status
 - [ ] Auth (register / login / refresh)
-- [ ] Course & progress module
-- [ ] Frontend shell + dashboard
+- [ ] Academic module — courses & enrollments
+- [ ] Progress module — credits & GPA
+- [ ] Goals and skill roadmaps
+- [ ] CI pipeline
 
 ## Documentation
 
